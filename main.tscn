@@ -2,5 +2,52 @@
 
 [ext_resource type="Script" uid="uid://1s7ce6icxeet" path="res://main.gd" id="1_ig7tw"]
 
-[node name="Node3D" type="Node3D" unique_id=1531523868]
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+shading_mode = 0
+albedo_color = Color(0.2, 0.55, 0.85, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(12, 0.2, 12)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+shading_mode = 0
+albedo_color = Color(0.22, 0.22, 0.25, 1)
+
+[node name="Main" type="Node3D" unique_id=1531523868]
 script = ExtResource("1_ig7tw")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 8)
+current = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="ColorRect" parent="Hud"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 560.0
+offset_bottom = 220.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Status" type="Label" parent="Hud"]
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 540.0
+offset_bottom = 208.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "Layered input"
