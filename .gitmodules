@@ -1,0 +1,4 @@
+[submodule "addons/enetheru.layered-input"]
+	path = addons/enetheru.layered-input
+	url = git@github.com:enetheru/godot-layered-input.git
+	branch = master
