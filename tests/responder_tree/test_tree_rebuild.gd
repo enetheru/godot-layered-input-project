@@ -47,8 +47,10 @@ func _run_test() -> int:
 		return runcode
 
 	var manager:Node = host.get_child(0)
+	await manager.until_rebuilt()
 	_mark("case:rebuild")
-	manager._rebuild_input_map()
+	manager.request_rebuild()
+	await manager.until_rebuilt()
 	var built:CustomInputMap = manager.get("effective_map") as CustomInputMap
 	var tail := StringName("li_%d" % (LAYER_COUNT - 1))
 	var missing:bool = built == null or not built.has_action(tail)
@@ -86,7 +88,6 @@ func _build_tree() -> SubViewport:
 		root.add_responder(row)
 		if not row.is_processing_input():
 			row._enter_tree()
-	manager._rebuild_input_map()
 	return host
 
 

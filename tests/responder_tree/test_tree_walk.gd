@@ -3,12 +3,14 @@ extends TestBase
 
 ## One key pushed through the whole responder list.
 ##
-## The tree has 4096 responders. This run does not merge. No responder marks
-## the event handled, so the viewport visits every responder.
+## The tree has 2048 responders. The push does not wait for a merge. No
+## responder marks the event handled, so the viewport visits every responder.
+## Building the tree queues a rebuild. The run waits for [signal _InputManager.rebuild_finished]
+## before it frees the tree.
 
 
-const LAYER_COUNT:int = 128
-const HARNESS_TIME:int = 5
+const LAYER_COUNT:int = 2048
+const HARNESS_TIME:int = 7
 
 
 class Row extends Responder:
@@ -60,6 +62,8 @@ func _run_test() -> int:
 	_mark("case:walk")
 	host.push_input(event)
 	var seen:int = Row.visits
+	var manager:Node = host.get_child(0)
+	await manager.until_rebuilt()
 	host.free()
 	_restore(snapshot)
 	if seen != LAYER_COUNT:
@@ -120,3 +124,8 @@ func _mark(text:String) -> void:
 	var profiler:Object = Engine.get_singleton(&'Profiler')
 	if profiler != null:
 		profiler.call(&'message', text)
+
+
+func _cleanup() -> Error:
+	print("Cleanup")
+	return OK
