@@ -26,7 +26,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/enetheru.layered-input/plugin.cfg")
+enabled=PackedStringArray("res://addons/enetheru.command-server/plugin.cfg", "res://addons/enetheru.gdsbench/plugin.cfg", "res://addons/enetheru.layered-input/plugin.cfg", "res://addons/enetheru.test-runner/plugin.cfg")
 
 [input_map_editor]
 
@@ -38,6 +38,14 @@ panel_min_height=280.0
 [physics]
 
 3d/physics_engine="Jolt Physics"
+
+[plugin]
+
+test_runner/lvl=15
+test_runner/tracy=true
+test_runner/tracy_capture=""
+test_runner/tracy_scripts=""
+test_runner/tracy_python=""
 
 [rendering]
 

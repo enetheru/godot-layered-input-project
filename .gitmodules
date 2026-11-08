@@ -2,3 +2,11 @@
 	path = addons/enetheru.layered-input
 	url = git@github.com:enetheru/godot-layered-input.git
 	branch = master
+[submodule "addons/enetheru.gdsbench"]
+	path = addons/enetheru.gdsbench
+	url = git@gitlab.com:enetheru/godot-gdsbench.git
+	branch = master
+[submodule "addons/enetheru.test-runner"]
+	path = addons/enetheru.test-runner
+	url = git@github.com:enetheru/godot-test-runner.git
+	branch = main
