@@ -18,9 +18,83 @@ const SHORTCUT_SLOT:StringName = &"_shortcut_input"
 const KEY_SLOT:StringName = &"_unhandled_key_input"
 const UNHANDLED_SLOT:StringName = &"_unhandled_input"
 
+var _snapshot:CustomInputMap
+var _open:Array[LinkTreeScript] = []
 
-func _tree() -> Object:
-	return LinkTreeScript.new()
+
+func _tree( map:CustomInputMap = null ) -> LinkTreeScript:
+	if not is_instance_valid( _snapshot ):
+		_snapshot = CustomInputMap.from_engine()
+	var tree:LinkTreeScript = LinkTreeScript.new( map )
+	_open.append( tree )
+	return tree
+
+
+func _cleanup() -> Error:
+	for tree:LinkTreeScript in _open:
+		if is_instance_valid( tree ):
+			await tree.until_rebuilt()
+	_restore( _snapshot )
+	_open.clear()
+	return OK
+
+
+func _key( code:Key ) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	return event
+
+
+func _action_map( action:StringName, code:Key ) -> CustomInputMap:
+	var map := CustomInputMap.new()
+	var _row:InputAction = map.add_action( action, 0.2, [_key( code )] )
+	return map
+
+
+func _placeholder_map( action:StringName ) -> CustomInputMap:
+	var map := CustomInputMap.new()
+	var _row:InputAction = map.add_action( action )
+	return map
+
+
+func _keycode_of( map:CustomInputMap, action:StringName ) -> Key:
+	if not is_instance_valid( map ):
+		return KEY_NONE
+	var events:Array[InputEvent] = map.get_action_events( action )
+	if events.is_empty():
+		return KEY_NONE
+	var first:InputEvent = events[0]
+	if first is InputEventKey:
+		var key:InputEventKey = first
+		return key.keycode
+	return KEY_NONE
+
+
+func _engine_keycode( action:StringName ) -> Key:
+	var events:Array[InputEvent] = []
+	events.assign( InputMap.action_get_events( action ) )
+	if events.is_empty():
+		return KEY_NONE
+	var first:InputEvent = events[0]
+	if first is InputEventKey:
+		var key:InputEventKey = first
+		return key.keycode
+	return KEY_NONE
+
+
+func _restore( snapshot:CustomInputMap ) -> void:
+	if is_instance_valid( InputManager ):
+		var live:Node = InputManager
+		var root:Responder = live.get( &"responder_root" )
+		if root != null:
+			root.set( &"input_map", _InputManager.get_default_input_map() )
+	if not is_instance_valid( snapshot ):
+		return
+	for action_name:StringName in InputMap.get_actions():
+		if not snapshot.has_action( action_name ):
+			InputMap.erase_action( action_name )
+	snapshot.apply_to_engine()
 
 
 func _record() -> RefCounted:

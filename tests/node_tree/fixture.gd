@@ -196,6 +196,57 @@ func _front_row( parent_row:Responder, hits:Array[int] ) -> Responder:
 	return node
 
 
+func _map_row() -> Responder:
+	var node := UnhandledRow.new()
+	node.order = []
+	node.process_mode = Node.PROCESS_MODE_ALWAYS
+	return node
+
+
+func _key( code:Key ) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	return event
+
+
+func _action_map( action:StringName, code:Key ) -> CustomInputMap:
+	var map := CustomInputMap.new()
+	var _row:InputAction = map.add_action( action, 0.2, [_key( code )] )
+	return map
+
+
+func _placeholder_map( action:StringName ) -> CustomInputMap:
+	var map := CustomInputMap.new()
+	var _row:InputAction = map.add_action( action )
+	return map
+
+
+func _keycode_of( map:CustomInputMap, action:StringName ) -> Key:
+	if not is_instance_valid( map ):
+		return KEY_NONE
+	var events:Array[InputEvent] = map.get_action_events( action )
+	if events.is_empty():
+		return KEY_NONE
+	var first:InputEvent = events[0]
+	if first is InputEventKey:
+		var key:InputEventKey = first
+		return key.keycode
+	return KEY_NONE
+
+
+func _engine_keycode( action:StringName ) -> Key:
+	var events:Array[InputEvent] = []
+	events.assign( InputMap.action_get_events( action ) )
+	if events.is_empty():
+		return KEY_NONE
+	var first:InputEvent = events[0]
+	if first is InputEventKey:
+		var key:InputEventKey = first
+		return key.keycode
+	return KEY_NONE
+
+
 func _expect_nodes( got:Array, want:Array, desc:String ) -> void:
 	TEST_EQ( want.size(), got.size(), desc )
 	if got.size() != want.size():
