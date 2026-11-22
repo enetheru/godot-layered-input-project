@@ -3,18 +3,31 @@ extends "fixture.gd"
 
 ## Writing the current map back keeps the same table.
 
+var _table:CustomInputMap
+var _current:CustomInputMap
+
+
+func _title() -> String:
+	return "Same input map"
+
+
+func _description() -> String:
+	return "Writing the current map back keeps the same table."
+
+
+func _setup() -> int:
+	var err:int = super()
+	if err != OK:
+		return err
+
+	await manager.until_rebuilt()
+	_table = manager.effective_map
+	_current = _engine_root().input_map
+	return OK
+
 
 func _run_test() -> int:
-	var vp:SubViewport = _begin()
-	if vp == null:
-		return runcode
-
+	_engine_root().input_map = _current
 	await manager.until_rebuilt()
-	var table:CustomInputMap = manager.effective_map
-	var root:Responder = _engine_root()
-	var current:CustomInputMap = root.input_map
-	root.input_map = current
-	await manager.until_rebuilt()
-	TEST_TRUE( is_same( manager.effective_map, table ), "same table" )
-	await _end()
-	return runcode
+	session.TEST_TRUE( is_same( manager.effective_map, _table ), "same table" )
+	return session.runcode

@@ -1,8 +1,10 @@
 @tool
 @abstract
-extends TestBase
+extends TR_Case
 
 ## Host and rows shared by the node responder cases.
+
+const NEEDS_TREE: bool = true
 
 
 var manager:_InputManager
@@ -89,9 +91,15 @@ class FrontRow extends Responder:
 			added._enter_tree()
 
 
+func _setup() -> int:
+	if _begin() == null:
+		return ERR_CANT_CREATE
+	return OK
+
+
 func _begin() -> SubViewport:
-	if _ensure_scene_tree() != OK or scene_tree == null:
-		TEST_TRUE( false, "no SceneTree" )
+	if session.tree == null:
+		session.TEST_TRUE( false, "no SceneTree" )
 		return null
 
 	_snapshot = CustomInputMap.from_engine()
@@ -102,7 +110,7 @@ func _begin() -> SubViewport:
 	vp.handle_input_locally = true
 	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	vp.process_mode = Node.PROCESS_MODE_ALWAYS
-	scene_tree.root.add_child( vp )
+	session.tree.root.add_child( vp )
 
 	var created := _InputManager.new()
 	created.name = "NodeCaseInput"
@@ -113,7 +121,7 @@ func _begin() -> SubViewport:
 	var root:Responder = created.get( &"responder_root" )
 	if root == null:
 		vp.free()
-		TEST_TRUE( false, "no root" )
+		session.TEST_TRUE( false, "no root" )
 		return null
 	root.set_block_signals( true )
 	manager = created
@@ -129,6 +137,11 @@ func _end() -> void:
 	host = null
 	manager = null
 	_restore( _snapshot )
+
+
+func _cleanup() -> int:
+	await _end()
+	return OK
 
 
 func _engine_root() -> Responder:
@@ -248,11 +261,11 @@ func _engine_keycode( action:StringName ) -> Key:
 
 
 func _expect_nodes( got:Array, want:Array, desc:String ) -> void:
-	TEST_EQ( want.size(), got.size(), desc )
+	session.TEST_EQ( want.size(), got.size(), desc )
 	if got.size() != want.size():
 		return
 	for i:int in want.size():
-		TEST_TRUE( got[i] == want[i], "%s %d" % [desc, i] )
+		session.TEST_TRUE( got[i] == want[i], "%s %d" % [desc, i] )
 
 
 func _restore( snapshot:CustomInputMap ) -> void:

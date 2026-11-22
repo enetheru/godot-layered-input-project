@@ -1,16 +1,21 @@
 @tool
-extends TestBase
+extends TR_Case
 
 ## One key pushed through the whole responder list.
 ##
 ## The tree has 2048 responders. The push does not wait for a merge. No
 ## responder marks the event handled, so the viewport visits every responder.
-## Building the tree queues a rebuild. The run waits for [signal _InputManager.rebuild_finished]
+## Building the tree queues a rebuild. Cleanup waits for [signal _InputManager.rebuild_finished]
 ## before it frees the tree.
+
+const NEEDS_TREE: bool = true
 
 
 const LAYER_COUNT:int = 2048
 const HARNESS_TIME:int = 7
+
+var _snapshot:CustomInputMap
+var _host:SubViewport
 
 
 class Row extends Responder:
@@ -38,37 +43,44 @@ class Row extends Responder:
 			visits += 1
 
 
+func _title() -> String:
+	return "Tree walk"
+
+
+func _description() -> String:
+	return "One key pushed through the whole responder list."
+
+
 func _configure() -> void:
 	# Wide budget so the capture window stays open for the whole run.
-	harness_time_s = HARNESS_TIME
+	session.budget_s = HARNESS_TIME
+
+
+func _setup() -> int:
+	if session.tree == null:
+		session.TEST_TRUE(false, "no SceneTree")
+		return ERR_UNCONFIGURED
+
+	_snapshot = CustomInputMap.from_engine()
+	_host = _build_tree()
+	if _host == null:
+		_restore(_snapshot)
+		session.TEST_TRUE(false, "no tree")
+		return ERR_CANT_CREATE
+	return OK
 
 
 func _run_test() -> int:
-	if _ensure_scene_tree() != OK or scene_tree == null:
-		TEST_TRUE(false, "no SceneTree")
-		return runcode
-
-	var snapshot:CustomInputMap = CustomInputMap.from_engine()
-	var host:SubViewport = _build_tree()
-	if host == null:
-		_restore(snapshot)
-		TEST_TRUE(false, "no tree")
-		return runcode
-
 	var event := InputEventKey.new()
 	event.keycode = KEY_SPACE
 	event.pressed = true
 	Row.visits = 0
 	_mark("case:walk")
-	host.push_input(event)
+	_host.push_input(event)
 	var seen:int = Row.visits
-	var manager:Node = host.get_child(0)
-	await manager.until_rebuilt()
-	host.free()
-	_restore(snapshot)
 	if seen != LAYER_COUNT:
-		TEST_TRUE(false, "push_input visited %d of %d" % [seen, LAYER_COUNT])
-	return runcode
+		session.TEST_TRUE(false, "push_input visited %d of %d" % [seen, LAYER_COUNT])
+	return session.runcode
 
 
 func _build_tree() -> SubViewport:
@@ -79,7 +91,7 @@ func _build_tree() -> SubViewport:
 	host.handle_input_locally = true
 	host.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	host.process_mode = Node.PROCESS_MODE_ALWAYS
-	scene_tree.root.add_child(host)
+	session.tree.root.add_child(host)
 
 	var manager := _InputManager.new()
 	manager.name = "TreeInput"
@@ -102,7 +114,7 @@ func _build_tree() -> SubViewport:
 
 
 func _restore(snapshot:CustomInputMap) -> void:
-	var leftover:Node = scene_tree.root.get_node_or_null("TreeWalkHost")
+	var leftover:Node = session.tree.root.get_node_or_null("TreeWalkHost")
 	if is_instance_valid(leftover):
 		leftover.free()
 	if is_instance_valid(InputManager):
@@ -126,6 +138,11 @@ func _mark(text:String) -> void:
 		profiler.call(&'message', text)
 
 
-func _cleanup() -> Error:
-	print("Cleanup")
+func _cleanup() -> int:
+	if is_instance_valid(_host) and _host.get_child_count() > 0:
+		var manager:Node = _host.get_child(0)
+		if is_instance_valid(manager):
+			await manager.until_rebuilt()
+	_restore(_snapshot)
+	_host = null
 	return OK

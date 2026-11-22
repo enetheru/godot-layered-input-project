@@ -1,8 +1,10 @@
 @tool
 @abstract
-extends TestBase
+extends TR_Case
 
 ## Records, walks, and the viewport host shared by the link-tree cases.
+
+const NEEDS_TREE: bool = true
 
 
 const LinkResponderScript = preload( "../../addons/enetheru.layered-input/link_tree/link_responder.gd" )
@@ -20,22 +22,27 @@ const UNHANDLED_SLOT:StringName = &"_unhandled_input"
 
 var _snapshot:CustomInputMap
 var _open:Array[LinkTreeScript] = []
+var tree:LinkTreeScript
+var host:SubViewport
 
 
-func _tree( map:CustomInputMap = null ) -> LinkTreeScript:
+func _tree( map:CustomInputMap = null ) -> void:
 	if not is_instance_valid( _snapshot ):
 		_snapshot = CustomInputMap.from_engine()
-	var tree:LinkTreeScript = LinkTreeScript.new( map )
+	tree = LinkTreeScript.new( map )
 	_open.append( tree )
-	return tree
 
 
-func _cleanup() -> Error:
-	for tree:LinkTreeScript in _open:
-		if is_instance_valid( tree ):
-			await tree.until_rebuilt()
+func _cleanup() -> int:
+	if is_instance_valid( host ):
+		host.free()
+	host = null
+	for open_tree:LinkTreeScript in _open:
+		if is_instance_valid( open_tree ):
+			await open_tree.until_rebuilt()
 	_restore( _snapshot )
 	_open.clear()
+	tree = null
 	return OK
 
 
@@ -118,17 +125,17 @@ func _children( record:Object ) -> Array:
 	return record.get( &"children" )
 
 
-func _expect( tree:Object, prop:StringName, want:Array, desc:String ) -> void:
-	var got:Array = tree.get( prop )
+func _expect( built:Object, prop:StringName, want:Array, desc:String ) -> void:
+	var got:Array = built.get( prop )
 	_expect_array( got, want, desc )
 
 
 func _expect_array( got:Array, want:Array, desc:String ) -> void:
-	TEST_EQ( want.size(), got.size(), desc )
+	session.TEST_EQ( want.size(), got.size(), desc )
 	if got.size() != want.size():
 		return
 	for i:int in want.size():
-		TEST_TRUE( got[i] == want[i], "%s %d" % [desc, i] )
+		session.TEST_TRUE( got[i] == want[i], "%s %d" % [desc, i] )
 
 
 func _make_event() -> InputEvent:
@@ -138,13 +145,13 @@ func _make_event() -> InputEvent:
 	return event
 
 
-func _make_host() -> SubViewport:
-	var host := SubViewport.new()
-	host.name = "LinkTreeHost"
-	host.disable_3d = true
-	host.size = Vector2i( 2, 2 )
-	host.handle_input_locally = true
-	host.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	host.process_mode = Node.PROCESS_MODE_ALWAYS
-	scene_tree.root.add_child( host )
-	return host
+func _make_host() -> void:
+	var made := SubViewport.new()
+	made.name = "LinkTreeHost"
+	made.disable_3d = true
+	made.size = Vector2i( 2, 2 )
+	made.handle_input_locally = true
+	made.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	made.process_mode = Node.PROCESS_MODE_ALWAYS
+	session.tree.root.add_child( made )
+	host = made
