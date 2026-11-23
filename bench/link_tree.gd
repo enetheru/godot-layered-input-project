@@ -19,8 +19,8 @@ extends EditorScript
 const RegisterLib = preload( "uid://ehhn1k7v0g6w" )
 const Types = preload( "uid://bktkomkeaq1qm" )
 const ConsoleReporter = preload( "uid://cp6jwltd8s2ur" )
-const LinkTreeScript = preload( "../addons/enetheru.layered-input/link_tree/link_tree.gd" )
-const LinkResponderScript = preload( "../addons/enetheru.layered-input/link_tree/link_responder.gd" )
+const ResponderTreeScript = preload( "../addons/enetheru.layered-input/systems/responder_tree.gd" )
+const ResponderScript = preload( "../addons/enetheru.layered-input/systems/responder.gd" )
 
 const REBUILD_SIZES:Array[int] = [8, 64, 256, 1024]
 const WALK_SIZES:Array[int] = [128, 1024, 4096]
@@ -48,7 +48,7 @@ func _run() -> void:
 	var saved_dry:bool = BenchLib.FLAGS_benchmark_dry_run
 	var saved_min_time:String = BenchLib.FLAGS_benchmark_min_time
 	var saved_reps:int = BenchLib.FLAGS_benchmark_repetitions
-	var snapshot:CustomInputMap = CustomInputMap.from_engine()
+	var snapshot:CustomInputMap = CustomInputMap.engine_baseline()
 
 	BenchLib.FLAGS_benchmark_dry_run = false
 	BenchLib.FLAGS_benchmark_min_time = "0.25s"
@@ -160,10 +160,11 @@ class MapRestore:
 		_tree = null
 		if is_instance_valid( InputManager ):
 			var live:Node = InputManager
-			var loaded:Object = live.get( &"responder_root" )
-			if loaded is Responder:
-				var root:Responder = loaded
-				root.set( &"input_map", _InputManager.get_default_input_map() )
+			var link:Object = live.get( &"tree" )
+			if link != null:
+				var root:Object = link.get( &"root" )
+				if root != null:
+					root.set( &"input_map", _InputManager.get_default_input_map() )
 		if not is_instance_valid( snapshot ):
 			return
 		for action_name:StringName in InputMap.get_actions():
@@ -211,21 +212,21 @@ class TreeFixture:
 		vp.process_mode = Node.PROCESS_MODE_ALWAYS
 		tree.root.add_child( vp )
 
-		var created:RefCounted = LinkTreeScript.new()
+		var created:RefCounted = ResponderTreeScript.new()
 		var root:Object = created.get( &"root" )
 		if root == null:
 			vp.free()
 			return null
 		if rebuild:
 			for i:int in count:
-				var record:RefCounted = LinkResponderScript.new()
+				var record:RefCounted = ResponderScript.new()
 				record.set( &"input_map", _layer_map( i ) )
 				root.call( &"add_responder", record )
 			created.call( &"_rebuild_input_map" )
 		else:
 			var input_call := Callable( LayerCall, &"on_input" )
 			for _i:int in count:
-				var record:RefCounted = LinkResponderScript.new()
+				var record:RefCounted = ResponderScript.new()
 				record.set( &"_input", input_call )
 				root.call( &"add_responder", record )
 

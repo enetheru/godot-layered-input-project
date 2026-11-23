@@ -27,26 +27,6 @@ const FLOOR_Y:float = 0.5
 const MOVE_LIMIT:float = 5.0
 
 
-## Forwards one layer's [InputEvent]s to a handler on [Main].
-class _LayerResponder extends Responder:
-	var handler:Callable
-
-	func _input( event:InputEvent ) -> void:
-		if not handler.is_valid():
-			return
-		var handled:bool = handler.call( event )
-		if not handled:
-			return
-		# This node can be outside a viewport. The host that owns the handler is in the scene.
-		var host:Node = handler.get_object() as Node
-		if host == null:
-			return
-		var viewport:Viewport = host.get_viewport()
-		if viewport == null:
-			return
-		viewport.set_input_as_handled()
-
-
 # ██████  ██████   ██████  ██████  ███████ ██████  ████████ ██ ███████ ███████ #
 # ██   ██ ██   ██ ██    ██ ██   ██ ██      ██   ██    ██    ██ ██      ██      #
 # ██████  ██████  ██    ██ ██████  █████   ██████     ██    ██ █████   ███████ #
@@ -58,8 +38,10 @@ func                        ________PROPERTIES_______              ()->void:pass
 @onready var camera:Camera3D = $Camera3D
 @onready var status:Label = $Hud/Status
 
-var _play:Responder
-var _menu:Responder
+const ResponderScript = preload( "res://addons/enetheru.layered-input/systems/responder.gd" )
+
+var _play:RefCounted
+var _menu:RefCounted
 var _is_menu_open:bool = false
 var _vertical_speed:float = 0.0
 var _note:String = "ready"
@@ -100,24 +82,27 @@ func _process( delta:float ) -> void:
 #         ██      ██ ███████    ██    ██   ██  ██████  ██████  ███████         #
 func                        _________METHODS_________              ()->void:pass
 
-func _on_play_input( event:InputEvent ) -> bool:
+func _on_play_input( event:InputEvent ) -> void:
 	if _pressed( event, ACTION_JUMP ):
 		_jump()
-		return true
+		get_viewport().set_input_as_handled()
+		return
 	if _pressed( event, ACTION_OPEN_MENU ):
 		_open_menu()
-		return true
-	return false
+		get_viewport().set_input_as_handled()
 
 
-func _on_menu_input( event:InputEvent ) -> bool:
+func _on_menu_input( event:InputEvent ) -> void:
 	if _pressed( event, ACTION_CLOSE_MENU ):
 		_close_menu()
-		return true
+		get_viewport().set_input_as_handled()
+		return
 	if _pressed( event, ACTION_CONFIRM ):
 		_confirm()
-		return true
-	return event.is_action_type()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_type():
+		get_viewport().set_input_as_handled()
 
 
 func _open_menu() -> void:
@@ -167,14 +152,14 @@ func _apply_motion( delta:float ) -> void:
 
 
 func _make_responder(
-			responder_name:StringName,
+			_responder_name:StringName,
 			map:CustomInputMap,
-			handler:Callable ) -> Responder:
-	var responder:_LayerResponder = _LayerResponder.new()
-	responder.name = responder_name
-	responder.input_map = map
-	responder.handler = handler
-	return responder
+			handler:Callable ) -> RefCounted:
+	var record:RefCounted = ResponderScript.new()
+	record.set( &"input_map", map )
+	record.set( &"_input", handler )
+	record.set_meta( &"layer_name", _responder_name )
+	return record
 
 
 func _build_play_map() -> CustomInputMap:
@@ -257,14 +242,27 @@ func _event_label( event:InputEvent ) -> String:
 
 
 func _layer_names() -> String:
-	if not is_instance_valid( InputManager.responder_root ):
+	var link:Object = InputManager.get( &"tree" )
+	if link == null:
+		return "(no root)"
+	var root:Object = link.get( &"root" )
+	if root == null:
 		return "(no root)"
 	var names:Array[String] = []
-	_collect_names( InputManager.responder_root, names )
+	_collect_names( root, names )
 	return ", ".join( names )
 
 
-func _collect_names( node:Node, names:Array[String] ) -> void:
-	names.append( String( node.name ) )
-	for child:Node in node.get_children():
-		_collect_names( child, names )
+func _collect_names( record:Object, names:Array[String] ) -> void:
+	if record == null:
+		return
+	var label:String = "root"
+	if record.has_meta( &"layer_name" ):
+		label = str( record.get_meta( &"layer_name" ) )
+	names.append( label )
+	var children:Array = record.get( &"children" )
+	for child:Variant in children:
+		var next:Object = child
+		if next == null:
+			continue
+		_collect_names( next, names )

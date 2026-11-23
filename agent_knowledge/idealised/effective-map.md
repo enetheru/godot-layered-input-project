@@ -16,7 +16,7 @@ Do these in order.
 
 The walks already live on the link tree, and the map is the other reading of that same order. Keeping the rebuild beside them leaves the measured Node manager on the path the node benches time.
 
-The fields and the rebuild stay in `addons/enetheru.layered-input/link_tree/link_tree.gd`. The live rebuild stays in `systems/input_manager.gd`, which still collects maps from the root forward and calls `{gdscript} merge` with its default overwrite. `{gdscript} plugin.gd` keeps its current preloads. `project.godot` keeps the autoload on `systems/input_manager.gd`.
+The fields and the rebuild stay in `addons/enetheru.layered-input/systems/responder_tree.gd`. The live rebuild stays in `systems/input_manager.gd`, which still collects maps from the root forward and calls `{gdscript} merge` with its default overwrite. `{gdscript} plugin.gd` keeps its current preloads. `project.godot` keeps the autoload on `systems/input_manager.gd`.
 
 The link tree holds `{gdscript} effective_map`. It signals `{gdscript} input_map_changed` with that map, and `{gdscript} rebuild_finished` when a queued rebuild has settled. `{gdscript} CustomInputMap.merge` and `{gdscript} apply_to_engine` stay the live functions. The link tree calls them.
 
@@ -52,7 +52,7 @@ The deferred body returns when `{gdscript} _rebuilding` is already set, leaving 
 
 The table is the behaviour this slice claims. A correctness test is the place that claim is checked. Timing stays in `bench/`. `bench/link_tree.gd` times this rebuild at the sizes the node bench uses for its map rebuild, and it times the walk at the same sizes as before.
 
-Add one script per case under `tests/link_tree/`, each extending the link fixture. Where the node tree settles on the same rows, add a twin of the same name under `tests/node_tree/`. Silencing the front child, and a map assigned before add, stay on the link tree. The live responder leaves `input_manager` empty, so an edit after the first rebuild does not request another one.
+Add one script per case under `tests/responder_tree/`, each extending the responder-tree fixture. Silencing the front child, and a map assigned before add, stay in that folder. The live responder leaves `input_manager` empty, so an edit after the first rebuild does not request another one.
 
 Construction now queues a rebuild, and that rebuild writes the engine `{gdscript} InputMap`. The link fixture saves the engine map before it builds a tree and writes that snapshot back after `{gdscript} until_rebuilt`, including the dispatch cases already in the folder.
 

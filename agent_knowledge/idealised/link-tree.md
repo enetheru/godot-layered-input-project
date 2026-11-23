@@ -17,9 +17,9 @@ Do these in order.
 
 The plugin and the autoload load named scripts. A folder neither of them preloads stays out of the running game, which is how this slice can exist beside the Node tree the benches already measured.
 
-Put the scripts at `addons/enetheru.layered-input/link_tree/`. The record file is `link_responder.gd`. The tree file is `link_tree.gd`. The test preloads both by path. The live `{gdscript} class_name Responder` stays on `systems/responder.gd`. `{gdscript} plugin.gd` keeps its current preloads. `project.godot` keeps the autoload on `systems/input_manager.gd`.
+The record file is `systems/responder.gd`. The tree file is `systems/responder_tree.gd`. The test preloads both by path. The autoload in `systems/input_manager.gd` owns one responder tree. `{gdscript} plugin.gd` keeps its current preloads. `project.godot` keeps the autoload on `systems/input_manager.gd`.
 
-The record's map field is a `{gdscript} CustomInputMap`. The tree preloads `systems/custom_input_map.gd` and `systems/input_action.gd`, so the new files reuse the maps the editor already writes. List `link_tree/` in `.exportignore`, beside `test/`, so an export keeps shipping `systems/` and `ui/`.
+The record's map field is a `{gdscript} CustomInputMap`. The tree preloads `systems/custom_input_map.gd` and `systems/input_action.gd`, so the new files reuse the maps the editor already writes. The scripts live in `systems/`, so an export ships them with the rest of that folder.
 
 ## Define the fixed responder record
 
@@ -89,7 +89,7 @@ A fill, a clear, an add, or a remove during the pass rewrites the stored walk. T
 
 The walks are the behaviour this slice claims. A correctness test is the place that claim is checked. Timing stays in `bench/`, on the Node tree.
 
-Add one script per case under `tests/link_tree/`, each extending `{gdscript} TestBase`. The runner picks up a `test*.gd` script under `res://tests/`. A trace is one case. The scripts preload `link_responder.gd` and `link_tree.gd`.
+Add one script per case under `tests/responder_tree/`, each extending `{gdscript} TestBase`. The runner picks up a `test*.gd` script under `res://tests/`. A trace is one case. The scripts preload `systems/responder.gd` and `systems/responder_tree.gd`.
 
 The order cases build records and read the walks.
 

@@ -1,27 +1,27 @@
 @tool
 extends TR_Case
 
-## One link tree. Setup creates the root record and lets the queued rebuild finish.
+## One responder tree. Setup creates the root record and lets the queued rebuild finish.
 
 const NEEDS_TREE: bool = true
 
-const LinkTreeScript = preload( "../../addons/enetheru.layered-input/link_tree/link_tree.gd" )
+const ResponderTreeScript = preload( "../../addons/enetheru.layered-input/systems/responder_tree.gd" )
 
 var _snapshot:CustomInputMap
-var _tree:LinkTreeScript
+var _tree:ResponderTreeScript
 
 
 func _title() -> String:
-	return "Link tree"
+	return "Responder tree"
 
 
 func _description() -> String:
-	return "One link tree. Setup creates the root record and lets the queued rebuild finish."
+	return "One responder tree. Setup creates the root record and lets the queued rebuild finish."
 
 
 func _setup() -> int:
-	_snapshot = CustomInputMap.from_engine()
-	_tree = LinkTreeScript.new()
+	_snapshot = CustomInputMap.engine_baseline()
+	_tree = ResponderTreeScript.new()
 	await _tree.until_rebuilt()
 	return OK
 
@@ -39,9 +39,11 @@ func _cleanup() -> int:
 func _restore( snapshot:CustomInputMap ) -> void:
 	if is_instance_valid( InputManager ):
 		var live:Node = InputManager
-		var root:Responder = live.get( &"responder_root" )
-		if root != null:
-			root.set( &"input_map", _InputManager.get_default_input_map() )
+		var link:Object = live.get( &"tree" )
+		if link != null:
+			var root:Object = link.get( &"root" )
+			if root != null:
+				root.set( &"input_map", _InputManager.get_default_input_map() )
 	if not is_instance_valid( snapshot ):
 		return
 	for action_name:StringName in InputMap.get_actions():

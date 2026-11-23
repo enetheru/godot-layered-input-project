@@ -2,13 +2,13 @@
 @abstract
 extends TR_Case
 
-## Records, walks, and the viewport host shared by the link-tree cases.
+## Records, walks, and the viewport host shared by the responder-tree cases.
 
 const NEEDS_TREE: bool = true
 
 
-const LinkResponderScript = preload( "../../addons/enetheru.layered-input/link_tree/link_responder.gd" )
-const LinkTreeScript = preload( "../../addons/enetheru.layered-input/link_tree/link_tree.gd" )
+const ResponderScript = preload( "../../addons/enetheru.layered-input/systems/responder.gd" )
+const ResponderTreeScript = preload( "../../addons/enetheru.layered-input/systems/responder_tree.gd" )
 
 const INPUT_WALK:StringName = &"input_walk"
 const SHORTCUT_WALK:StringName = &"shortcut_input_walk"
@@ -21,15 +21,15 @@ const KEY_SLOT:StringName = &"_unhandled_key_input"
 const UNHANDLED_SLOT:StringName = &"_unhandled_input"
 
 var _snapshot:CustomInputMap
-var _open:Array[LinkTreeScript] = []
-var tree:LinkTreeScript
+var _open:Array[ResponderTreeScript] = []
+var tree:ResponderTreeScript
 var host:SubViewport
 
 
 func _tree( map:CustomInputMap = null ) -> void:
 	if not is_instance_valid( _snapshot ):
-		_snapshot = CustomInputMap.from_engine()
-	tree = LinkTreeScript.new( map )
+		_snapshot = CustomInputMap.engine_baseline()
+	tree = ResponderTreeScript.new( map )
 	_open.append( tree )
 
 
@@ -37,7 +37,7 @@ func _cleanup() -> int:
 	if is_instance_valid( host ):
 		host.free()
 	host = null
-	for open_tree:LinkTreeScript in _open:
+	for open_tree:ResponderTreeScript in _open:
 		if is_instance_valid( open_tree ):
 			await open_tree.until_rebuilt()
 	_restore( _snapshot )
@@ -93,9 +93,11 @@ func _engine_keycode( action:StringName ) -> Key:
 func _restore( snapshot:CustomInputMap ) -> void:
 	if is_instance_valid( InputManager ):
 		var live:Node = InputManager
-		var root:Responder = live.get( &"responder_root" )
-		if root != null:
-			root.set( &"input_map", _InputManager.get_default_input_map() )
+		var link:Object = live.get( &"tree" )
+		if link != null:
+			var root:Object = link.get( &"root" )
+			if root != null:
+				root.set( &"input_map", _InputManager.get_default_input_map() )
 	if not is_instance_valid( snapshot ):
 		return
 	for action_name:StringName in InputMap.get_actions():
@@ -105,7 +107,7 @@ func _restore( snapshot:CustomInputMap ) -> void:
 
 
 func _record() -> RefCounted:
-	return LinkResponderScript.new()
+	return ResponderScript.new()
 
 
 func _fill( record:Object, slot:StringName ) -> void:
