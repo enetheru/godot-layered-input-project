@@ -81,7 +81,7 @@ The tree is parent and child lists. The root holds the default map. The caller k
 
 #### Effective Map Rebuild
 
-A change to a responder's `{gdscript} active`, or of `{gdscript} input_map`, patches the names that layer owns when `{gdscript} branch_affects_map` is true. The front write stays, which is how a menu clears jump. A stock row shares the stock map's events. A gameplay row keeps a copy while the source events stay the same. The table stays, and an unchanged row is left in place.
+A change to a responder's `{gdscript} active`, or of `{gdscript} input_map`, patches the names that layer owns when the branch contributes a map. The front write stays, which is how a menu clears jump. A stock row shares the stock map's events. A gameplay row keeps a copy while the source events stay the same. The table stays, and an unchanged row is left in place.
 
 ##### One meaning per idle
 
@@ -91,7 +91,7 @@ A frame can add a responder, silence one, and swap a map. Those are one change o
 
 The tree keeps four cached walks, one for each callback the `{gdscript} InputManager` implements. A walk lists the responders that filled that slot, in front-to-back order, so an empty slot is never visited. During the callback the manager calls `{gdscript} dispatch_input` and its three siblings. Each copies the walk and the callables, calls them in order, reads `{gdscript} viewport.is_input_handled()` after each call, and stops when the handler has marked the viewport.
 
-A change made during a pass applies when the pass returns, so a key finishes on the walks that were current when it arrived. Filling or clearing a slot rebuilds that one walk.
+A change made during a pass applies when the pass returns, so a key finishes on the walks that were current when it arrived. Filling a slot rebuilds that walk. Clearing a slot erases the record and leaves the rest in order.
 
 ### Responder
 
