@@ -26,7 +26,7 @@ The addon provides:
 ### Solutions
 
 - A `{gdscript} CustomInputMap` saves a `{gdscript} Dictionary` of `{gdscript} InputAction` rows. Each row holds the `{gdscript} InputEvent`s for that action.
-- `{gdscript} InputManager` holds a `{gdscript} ResponderTree` and dispatches each `{gdscript} InputEvent` to a `{gdscript} Node` in the main `{gdscript} SceneTree`, or to some other target.
+- `{gdscript} InputManager` holds a `{gdscript} ResponderTree` and dispatches each `{gdscript} InputEvent` to the callables on that tree's walks.
 - The editor plugin edits a `{gdscript} CustomInputMap` in the Godot editor, with the same gestures as the built-in Input Map.
 - The runtime action editor is the same control the editor plugin uses, available while the game is running, so a player can change bindings and save the map.
 ## Runtime System
@@ -46,9 +46,9 @@ The class in `systems/input_manager.gd` is named `{gdscript} _InputManager`, whi
 Both the distribution of InputEvents, and the composition of the CustomInputMaps share the same `{gdscript} ResponderTree` data structure.
 #### Composing InputMaps
 
-To keep things *simple*, we will use the same ordering the engine uses when walking the `{gdscript} SceneTree`, last child wins. so the composition starts from the first child and overwrites? or should we start from the last child and skip? Can we merge? should it depend on the input action itself? things need to be decided. For now last child wins and i think we skip so less work is done.
+The stored order is parent, then children first to last. The composition reads that order from the front, the same direction as a walk, so the last child writes first. `{gdscript} merge` is called with `{gdscript} overwrite` false, and a name the front wrote stays. A name left empty is filled from the startup engine map.
 
-The final result of the composition are held in the `{gdscript} effective_map` and are written to the engine, then `{gdscript} input_map_changed` fires so a listener hears the settled meaning.
+The settled table is `{gdscript} effective_map`. It is written to the engine, then `{gdscript} input_map_changed` fires so a listener hears that meaning.
 #### Distributing InputEvents
 
 The `{gdscript} SceneTree` arrangement used for visual layout and spatial mouse clicks is often at odds with the layout that we want key/joy input processed. We need to de-couple the receipt of InputEvents from the SceneTree's usual processing.
@@ -81,15 +81,15 @@ The tree is parent and child lists. The root holds the default map. The caller k
 
 #### Effective Map Rebuild
 
-A change to a responder's `{gdscript} active`, or of `{gdscript} input_map`, rebuilds when `{gdscript} branch_affects_map` is true. The merge walks the tree, and a later contributing map replaces the same action name, which is how a menu clears jump.
+A change to a responder's `{gdscript} active`, or of `{gdscript} input_map`, patches the names that layer owns when `{gdscript} branch_affects_map` is true. The front write stays, which is how a menu clears jump. A stock row shares the stock map's events. A gameplay row keeps a copy while the source events stay the same. The table stays, and an unchanged row is left in place.
 
 ##### One meaning per idle
 
-A frame can add a responder, silence one, and swap a map. Those are one change of meaning, so the engine should see one table. `{gdscript} request_rebuild` sets `{gdscript} _want_rebuild` and queues a single `{gdscript} call_deferred` of `{gdscript} _rebuild_input_map`, which runs at idle, after the frame's decisions. `{gdscript} _rebuilding` stays set through `{gdscript} apply_to_engine` and the `{gdscript} input_map_changed` emit, so a listener that edits the tree from that signal waits for a later rebuild.
+A frame can add a responder, silence one, and swap a map. Those are one change of meaning, so the engine should see one table. `{gdscript} request_patch` and `{gdscript} request_rebuild` set `{gdscript} _want_rebuild` and queue a single `{gdscript} call_deferred`, which runs at idle, after the frame's decisions. `{gdscript} request_rebuild` composes every name. A patch rewrites the names it was given. `{gdscript} _rebuilding` stays set through the engine write and the `{gdscript} input_map_changed` emit, so a listener that edits the tree from that signal waits for a later compose.
 
 #### Dispatch
 
-The tree keeps four cached walks, one for each callback the `{gdscript} InputManager` implements. A walk lists the responders that filled that slot, in front-to-back order, so an empty slot is never visited. During the callback the manager calls straight through that list, reads `{gdscript} get_viewport().is_input_handled()` after each call, and stops when the handler has marked the viewport.
+The tree keeps four cached walks, one for each callback the `{gdscript} InputManager` implements. A walk lists the responders that filled that slot, in front-to-back order, so an empty slot is never visited. During the callback the manager calls `{gdscript} dispatch_input` and its three siblings. Each copies the walk and the callables, calls them in order, reads `{gdscript} viewport.is_input_handled()` after each call, and stops when the handler has marked the viewport.
 
 A change made during a pass applies when the pass returns, so a key finishes on the walks that were current when it arrived. Filling or clearing a slot rebuilds that one walk.
 
@@ -105,12 +105,12 @@ A `{gdscript} Responder` has a fixed size, and it is not overloadable. The field
 The fields that decide a contribution are `{gdscript} input_map` and `{gdscript} active`. `{gdscript} contributes_map()` is `{gdscript} active and input_map != null`, and that is the check the merge uses. While `{gdscript} active` is false the map stays out of the `{gdscript} effective_map`.
 #### EventDispatch
 
-The record has four callable slots, one for each callback: `{gdscript} _input`, `{gdscript} _shortcut_input`, `{gdscript} _unhandled_key_input`, and `{gdscript} _unhandled_input`. An empty slot leaves the responder out of that walk. A gameplay responder fills the unhandled slot it needs and leaves the others empty. The callable may forward to a target that already lives on the world or the UI, which is how play and menu return to the caller that added them. Adding the responder leaves that target where it is.
+The record has four callable slots, one for each callback: `{gdscript} _input`, `{gdscript} _shortcut_input`, `{gdscript} _unhandled_key_input`, and `{gdscript} _unhandled_input`. An empty slot leaves the responder out of that walk. A caller fills the slots it handles and leaves the others empty. The callable may forward to a target that already lives on the world or the UI. Adding the responder leaves that target where it is. Play, the inventory, and the menu in this project fill `{gdscript} _input`.
 #### Active/Inactive
 
 `{gdscript} set_active` and `{gdscript} set_input_map` return when the new value is the current one. Each remembers whether the responder was contributing, writes the value, and requests a rebuild only when it contributed before the write or contributes after it. A change made before the responder is in the tree waits, and the rebuild runs once it is in the tree.
 
-`{gdscript} input_manager` is the pointer the rebuild uses. The call returns when that pointer is invalid, and it returns when the object has no `{gdscript} request_rebuild` method, which is the check for a placeholder left by an editor reload. The field needs one writer, at the moment the responder joins the tree, so this check and the rebuild stay the same path.
+`{gdscript} _tree` is the `{gdscript} ResponderTree` the rebuild uses. The call returns while that field is empty, which is how an edit made before the responder joins the tree waits. The field is written when the responder is linked.
 
 ### CustomInputMap
 

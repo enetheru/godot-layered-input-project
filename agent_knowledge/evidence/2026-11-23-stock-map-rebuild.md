@@ -18,7 +18,7 @@ The addon calls `alias_from_engine` once, before the first rebuild, and stores i
 
 ## A row the next pass throws away
 
-Look for a fill that runs before the pass that overwrites the same names. The node rebuild used to install the whole baseline and then merge the responder maps, so every name the root map defined was constructed and then replaced. The merge now runs first. `install` fills only the names no layer wrote. The link tree already filled the gaps last.
+Look for a fill that runs before the pass that overwrites the same names. The merge runs first. `install` fills only the names no layer wrote.
 
 `install` in the last capture is 0.36 ms. In the two earlier readings it was 1.4 ms and 1.5 ms. Those earlier readings still walked the map with the custom iterator, so the drop belongs to that walk as well as to building fewer rows.
 

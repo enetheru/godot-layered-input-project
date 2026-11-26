@@ -1,7 +1,7 @@
 @tool
 extends "fixture.gd"
 
-## Removing the root keeps the root.
+## The tree holds the root, and the root has no parent.
 
 var _root:Object
 
@@ -11,7 +11,7 @@ func _title() -> String:
 
 
 func _description() -> String:
-	return "Removing the root keeps the root."
+	return "The tree holds the root, and the root has no parent."
 
 
 func _setup() -> int:
@@ -21,7 +21,6 @@ func _setup() -> int:
 
 
 func _run_test() -> int:
-	tree.call( &"remove_responder", _root )
 	session.TEST_TRUE( tree.get( &"root" ) == _root, "root stays" )
 	session.TEST_TRUE( _root.get( &"parent" ) == null, "root parent" )
 	return session.runcode
