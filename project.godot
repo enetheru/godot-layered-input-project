@@ -59,21 +59,23 @@ test_runner/tracy_scripts="C:\\Godot\\src\\godot-private\\misc\\scripts\\tracy\\
 test_runner/python_exe="C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python314\\python.exe"
 test_runner/tracy_pad_s=0.07147642040984499
 test_runner/tracy_pad_samples=32
-test_runner/tree_folded=PackedStringArray("res://cases/scene_tree", "res://cases/server")
-test_runner/split_offset=190
-test_runner/Logging/lvl=15
+test_runner/tree_folded=PackedStringArray()
+test_runner/split_offset=395
+test_runner/Logging/lvl=127
 test_runner/Discovery/cases_dirs=PackedStringArray("res://tests/")
 test_runner/Hooks/hook_dirs=PackedStringArray("res://addons/enetheru.test-runner/runner/hooks")
-test_runner/Play/Templates/debug="C:/Godot/Projects/Enetheru.test-runner-project/godot.windows.template_debug.x86_64.llvm.tracy.exe"
-test_runner/Play/Templates/release="C:/Godot/Projects/Enetheru.test-runner-project/godot.windows.template_release.x86_64.llvm.tracy.exe"
-test_runner/hooks/tracy/Tracy/enabled=false
+test_runner/Play/Templates/debug="C:/Godot/Projects/Enetheru.layered-input-project/godot.windows.template_debug.x86_64.llvm.tracy.exe"
+test_runner/Play/Templates/release="C:/Godot/Projects/Enetheru.layered-input-project/godot.windows.template_release.x86_64.llvm.tracy.exe"
+test_runner/hooks/tracy/Tracy/enabled=true
 test_runner/hooks/tracy/Tracy/python_exe="C:/Users/nicho/AppData/Local/Programs/Python/Python314/python.exe"
-test_runner/hooks/tracy/Tracy/Capture/exe="C:/git/wolfpld/tracy/capture/cmake-build-release-visual-studio/tracy-capture.exe"
+test_runner/hooks/tracy/Tracy/Capture/exe="C:/git/wolfpld/tracy/capture/cmake-build-release-visual-studio/Release/tracy-capture.exe"
 test_runner/hooks/tracy/Tracy/Capture/scripts="C:/Godot/src/godot-private/misc/scripts/tracy"
-test_runner/hooks/tracy/Tracy/Capture/Pad/s=0.0129854646707089
+test_runner/hooks/tracy/Tracy/Capture/Pad/s=0.06310565727780963
 test_runner/hooks/tracy/Tracy/Capture/Pad/samples=32
 test_runner/hooks/tracy/Tracy/Timing/=3.0
 test_runner/hooks/tracy/Tracy/Record/=8191
+test_runner/Discovery/hook_dirs=PackedStringArray("res://addons/enetheru.test-runner/runner/hooks")
+test_runner/hooks/tracy/Tracy/Capture/crop=true
 
 [rendering]
 
