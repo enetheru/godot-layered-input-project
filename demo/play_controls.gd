@@ -32,7 +32,7 @@ const CAM_LOOK_Y:float = 0.9
 const TURN_RATE:float = 10.0
 const CAM_RATE:float = 8.0
 
-const ResponderScript = preload( "res://addons/enetheru.layered-input/systems/responder.gd" )
+const Responder = preload("uid://cjpmfrvsqx7jo")
 const TreeViewScript = preload( "res://demo/tree_view.gd" )
 
 
@@ -49,7 +49,7 @@ signal menu_requested
 @onready var body:MeshInstance3D = $"../Body"
 @onready var camera:Camera3D = $"../Camera3D"
 
-var _record:RefCounted
+var _record:Responder
 var _trace:TreeViewScript
 var _movement_paused:bool = false
 var _vertical_speed:float = 0.0
@@ -102,9 +102,9 @@ func                        __Mount__________________              ()->void:pass
 ## Build the record, point [code]_input[/code] at this object, and mount it.
 ## [InputManager] appends it under the link root. Later records sit in front of it on the walk.
 func _mount() -> void:
-	_record = ResponderScript.new()
-	_record.set( &"input_map", _build_map() )
-	_record.set( &"_input", Callable( self, &"_on_input" ) )
+	_record = Responder.new()
+	_record.input_map = _build_map()
+	_record._input = _on_input
 	_record.set_meta( &"layer_name", &"play" )
 	InputManager.add_responder( _record )
 

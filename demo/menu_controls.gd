@@ -20,7 +20,8 @@ const ACTION_JUMP:StringName = &"jump"
 const ACTION_CLOSE_MENU:StringName = &"close_menu"
 const ACTION_CONFIRM:StringName = &"confirm"
 
-const ResponderScript = preload( "res://addons/enetheru.layered-input/systems/responder.gd" )
+const Responder = preload("uid://cjpmfrvsqx7jo")
+
 const TreeViewScript = preload( "res://demo/tree_view.gd" )
 const PlayControls = preload( "res://demo/play_controls.gd" )
 
@@ -35,7 +36,7 @@ func                        ________PROPERTIES_______              ()->void:pass
 ## Gameplay object whose movement should pause while this menu is mounted.
 var play:PlayControls
 
-var _record:RefCounted
+var _record:Responder
 var _trace:TreeViewScript
 var _layer:CanvasLayer
 var _panel:PanelContainer
@@ -86,9 +87,9 @@ func                        __Mount__________________              ()->void:pass
 
 ## Keep the record unmounted until [method open]. Creating it here means open only links it.
 func _mount() -> void:
-	_record = ResponderScript.new()
-	_record.set( &"input_map", _build_map() )
-	_record.set( &"_input", Callable( self, &"_on_input" ) )
+	_record = Responder.new()
+	_record.input_map = _build_map()
+	_record._input = _on_input
 	_record.set_meta( &"layer_name", &"menu" )
 
 
