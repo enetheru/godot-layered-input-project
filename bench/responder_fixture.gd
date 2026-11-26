@@ -12,6 +12,9 @@ const ConsoleReporter = preload( "uid://cp6jwltd8s2ur" )
 const ResponderTree = preload( "res://addons/enetheru.layered-input/systems/responder_tree.gd" )
 const Responder = preload( "res://addons/enetheru.layered-input/systems/responder.gd" )
 
+const REBUILD_SIZES:Array[int] = [8, 64, 256, 1024]
+const WALK_SIZES:Array[int] = [128, 1024, 4096]
+
 
 class Host:
 	static var tree:SceneTree
@@ -26,11 +29,14 @@ class LayerCall:
 
 
 # The bench needs a SceneTree to hang the viewport on. The editor has one. A template player does too.
+# EditorInterface is named through the singleton so a template can still parse this script.
 static func editor_tree() -> SceneTree:
 	if OS.has_feature( "editor" ):
-		var base:Control = EditorInterface.get_base_control()
-		if base != null:
-			return base.get_tree()
+		var editor:Object = Engine.get_singleton( &"EditorInterface" )
+		if editor != null:
+			var base:Control = editor.call( &"get_base_control" )
+			if base != null:
+				return base.get_tree()
 	var loop:MainLoop = Engine.get_main_loop()
 	if loop is SceneTree:
 		var scene_tree:SceneTree = loop
@@ -168,3 +174,49 @@ class TreeFixture:
 			host.free()
 		host = null
 		responder_tree = null
+
+
+# One full compose. The tree is already built, and each record contributes one action.
+static func BM_ResponderTreeRebuild( state:State ) -> void:
+	var count:int = state.get_range( 0 )
+	var fx:TreeFixture = TreeFixture.build( count, Host.tree, true )
+	var built:CustomInputMap = TreeFixture.map_of( fx.responder_tree ) if fx != null else null
+	if fx == null or built == null:
+		state.SkipWithError( "no tree" )
+		if fx != null:
+			fx.free_tree()
+		return
+	var tail:StringName = StringName( "li_%d" % ( count - 1 ) )
+	if not built.has_action( tail ):
+		state.SkipWithError( "rebuild did not keep %s" % tail )
+		fx.free_tree()
+		return
+	for _i in state:
+		fx.responder_tree._rebuild_input_map()
+	fx.free_tree()
+
+
+# One dispatch. No record marks the viewport handled, so every callable runs.
+static func BM_ResponderTreeWalk( state:State ) -> void:
+	var count:int = state.get_range( 0 )
+	var fx:TreeFixture = TreeFixture.build( count, Host.tree, false )
+	if fx == null or fx.host == null or fx.responder_tree == null:
+		state.SkipWithError( "no tree" )
+		if fx != null:
+			fx.free_tree()
+		return
+
+	var event:InputEventKey = InputEventKey.new()
+	event.keycode = KEY_SPACE
+	event.pressed = true
+	LayerCall.visits = 0
+	fx.responder_tree.dispatch_input( fx.host, event )
+	if LayerCall.visits != count:
+		state.SkipWithError( "dispatch visited %d of %d" % [LayerCall.visits, count] )
+		fx.free_tree()
+		return
+
+	LayerCall.visits = 0
+	for _i in state:
+		fx.responder_tree.dispatch_input( fx.host, event )
+	fx.free_tree()
