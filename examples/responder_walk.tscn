@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://examples/GDSBenchExample.tscn" id="1_base"]
+[ext_resource type="Script" path="res://examples/responder_walk.gd" id="2_script"]
+
+[node name="ResponderWalk" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+title = "Responder walk"
+min_time = "0.25s"

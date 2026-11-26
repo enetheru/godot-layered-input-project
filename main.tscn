@@ -5,8 +5,8 @@
 [ext_resource type="Script" uid="uid://ci7pl3tlqnacq" path="res://demo/play_controls.gd" id="3_play"]
 [ext_resource type="Script" uid="uid://dcpmgmo8o0mpm" path="res://demo/menu_controls.gd" id="4_menu"]
 [ext_resource type="Script" uid="uid://cxe77pvms7bwv" path="res://demo/landmarks.gd" id="5_yard"]
-[ext_resource type="Script" path="res://demo/inventory_controls.gd" id="6_inventory"]
-[ext_resource type="Script" path="res://demo/escape_status.gd" id="7_escape"]
+[ext_resource type="Script" uid="uid://b51vpf4tg2uph" path="res://demo/inventory_controls.gd" id="6_inventory"]
+[ext_resource type="Script" uid="uid://cgfmibke6nu1i" path="res://demo/escape_status.gd" id="7_escape"]
 
 [sub_resource type="Environment" id="Environment_sky"]
 background_mode = 1
@@ -54,7 +54,7 @@ script = ExtResource("3_play")
 [node name="MenuControls" type="Node" parent="." unique_id=1517971169]
 script = ExtResource("4_menu")
 
-[node name="InventoryControls" type="Node" parent="."]
+[node name="InventoryControls" type="Node" parent="." unique_id=2099238538]
 script = ExtResource("6_inventory")
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486251750]
@@ -73,7 +73,8 @@ size_flags_horizontal = 3
 mouse_filter = 2
 script = ExtResource("2_view")
 
-[node name="EscapeStatus" type="Control" parent="Hud"]
+[node name="EscapeStatus" type="Control" parent="Hud" unique_id=562537726]
+layout_mode = 3
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -81,5 +82,6 @@ offset_left = 12.0
 offset_top = -52.0
 offset_right = 280.0
 offset_bottom = -12.0
+grow_vertical = 0
 mouse_filter = 2
 script = ExtResource("7_escape")

@@ -26,7 +26,7 @@ Look for a fill that runs before the pass that overwrites the same names. The me
 
 Look for `duplicate_action` on a layer that has not changed since the previous rebuild. The stock root map is that layer. `merge` now keeps the duplicated events for a source action while that action's `events` array still holds the same objects, in the same order. The deadzone is read from the action each time, so a deadzone edit does not copy the events again. Replacing, adding, or removing an event builds a new copy. A field edit on an event object that stays in the list leaves the stored copy as it is.
 
-This capture merges the stock map once, so the cache is filled and not reused. `Resource.duplicate` is still 1.1 ms for 98 events, and `_cached_events` around that copy is 2.0 ms. A second rebuild of an unchanged layer would skip the duplicates. That second pass is not in this file.
+This capture merges the stock map once, so the cache is filled and not reused. `Resource.duplicate` is still 1.1 ms for 98 events, and `_cached_events` around that copy is 2.0 ms. A later full rebuild of an unchanged tree keeps the shared stock rows and skips that copy. The 26 November evening bench in the responder-tree comparison is that repeated pass: 37.1 ms at 1024 records, against 13362 ms the same afternoon before the share.
 
 ## An engine write of objects the engine already holds
 

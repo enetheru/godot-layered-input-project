@@ -16,7 +16,7 @@ Play, the inventory, and the menu are the whole of this scene's gameplay. Furthe
 
 The addon repository is the source of the package. This project consumes it by pin. A change to merge, delivery, or the editor is proven here, then the pin moves.
 
-`addons/enetheru.test-runner` and `addons/enetheru.gdsbench` are pinned the same way, and `project.godot` enables them beside the command server. The proof is the responder-tree suite, and a time taken by `bench/responder_tree.gd`.
+`addons/enetheru.test-runner` and `addons/enetheru.gdsbench` are pinned the same way, and `project.godot` enables them beside the command server. The proof is the responder-tree suite, and a time taken by `bench/responder_rebuild.gd` and `bench/responder_walk.gd`.
 
 HelloWorld is the game that already calls the same autoload. That game is the long caller. This project stays the short one, so the result of a responder change is the whole scene.
 
@@ -28,7 +28,7 @@ The command server stays enabled beside Layered Input. An agent lists and runs t
 
 ## Benchmarking
 
-`bench/responder_tree.gd` is an editor script. `BM_ResponderTreeRebuild` times one `_rebuild_input_map` on a tree that is already built, at 8, 64, 256, and 1024 records. `BM_ResponderTreeWalk` times one `dispatch_input` through records that fill `_input` and carry no map, at 128, 1024, and 4096. The walk sample leaves the map rebuild outside the timed loop.
+`bench/responder_rebuild.gd` times one `_rebuild_input_map` on a tree that is already built, at 8, 64, 256, and 1024 records. `bench/responder_walk.gd` times one `dispatch_input` through records that fill `_input` and carry no map, at 128, 1024, and 4096. The walk sample leaves the map rebuild outside the timed loop. [benchmark.md](benchmark.md) is the best case those times are read against. `examples/hub.tscn` opens each bench on its own table. The project main scene stays the yard.
 
 ## A passing run
 

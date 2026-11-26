@@ -34,7 +34,7 @@ gdscript/warnings/missing_await=1
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/stretch/mode="disabled"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 
@@ -71,7 +71,7 @@ test_runner/hooks/tracy/Tracy/enabled=true
 test_runner/hooks/tracy/Tracy/python_exe="C:/Users/nicho/AppData/Local/Programs/Python/Python314/python.exe"
 test_runner/hooks/tracy/Tracy/Capture/exe="C:/git/wolfpld/tracy/capture/cmake-build-release-visual-studio/Release/tracy-capture.exe"
 test_runner/hooks/tracy/Tracy/Capture/scripts="C:/Godot/src/godot-private/misc/scripts/tracy"
-test_runner/hooks/tracy/Tracy/Capture/Pad/s=0.06310565727780963
+test_runner/hooks/tracy/Tracy/Capture/Pad/s=0.08158599998805892
 test_runner/hooks/tracy/Tracy/Capture/Pad/samples=32
 test_runner/hooks/tracy/Tracy/Timing/=3.0
 test_runner/hooks/tracy/Tracy/Record/=8191
