@@ -2,13 +2,13 @@
 
 [ext_resource type="Script" uid="uid://1s7ce6icxeet" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://cnubyt1hhka21" path="res://demo/tree_view.gd" id="2_view"]
+[ext_resource type="Script" uid="uid://ci7pl3tlqnacq" path="res://demo/play_controls.gd" id="3_play"]
+[ext_resource type="Script" uid="uid://dcpmgmo8o0mpm" path="res://demo/menu_controls.gd" id="4_menu"]
+[ext_resource type="Script" uid="uid://cxe77pvms7bwv" path="res://demo/landmarks.gd" id="5_yard"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(12, 0.2, 12)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
-shading_mode = 0
-albedo_color = Color(0.22, 0.22, 0.25, 1)
+[sub_resource type="Environment" id="Environment_sky"]
+background_mode = 1
+background_color = Color(0.62, 0.7, 0.78, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_body"]
 
@@ -16,33 +16,52 @@ albedo_color = Color(0.22, 0.22, 0.25, 1)
 shading_mode = 0
 albedo_color = Color(0.2, 0.55, 0.85, 1)
 
+[sub_resource type="BoxMesh" id="BoxMesh_nose"]
+size = Vector3(0.18, 0.32, 0.36)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nose"]
+shading_mode = 0
+albedo_color = Color(0.95, 0.78, 0.25, 1)
+
 [node name="Main" type="Node3D" unique_id=1531523868]
 script = ExtResource("1_ig7tw")
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1640607495]
+environment = SubResource("Environment_sky")
+
 [node name="Camera3D" type="Camera3D" parent="." unique_id=183973975]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 7)
 current = true
 
-[node name="Floor" type="MeshInstance3D" parent="." unique_id=1988335431]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
-mesh = SubResource("BoxMesh_floor")
-surface_material_override/0 = SubResource("StandardMaterial3D_floor")
+[node name="Yard" type="Node3D" parent="." unique_id=1862468710]
+script = ExtResource("5_yard")
 
 [node name="Body" type="MeshInstance3D" parent="." unique_id=1273387026]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 mesh = SubResource("BoxMesh_body")
 surface_material_override/0 = SubResource("StandardMaterial3D_body")
 
+[node name="Nose" type="MeshInstance3D" parent="Body" unique_id=715098730]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, -0.42)
+mesh = SubResource("BoxMesh_nose")
+surface_material_override/0 = SubResource("StandardMaterial3D_nose")
+
+[node name="PlayControls" type="Node" parent="." unique_id=384900972]
+script = ExtResource("3_play")
+
+[node name="MenuControls" type="Node" parent="." unique_id=1517971169]
+script = ExtResource("4_menu")
+
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486251750]
 
-[node name="TreeScroll" type="ScrollContainer" parent="Hud"]
+[node name="TreeScroll" type="ScrollContainer" parent="Hud" unique_id=118924515]
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_right = 620.0
+offset_right = 480.0
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="TreeView" type="Control" parent="Hud/TreeScroll"]
+[node name="TreeView" type="Control" parent="Hud/TreeScroll" unique_id=1976141404]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2

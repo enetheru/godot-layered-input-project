@@ -22,7 +22,6 @@ const CLAIM:Color = Color( 0.93, 0.78, 0.42, 1 )
 const PANEL:Color = Color( 0.05, 0.06, 0.08, 0.92 )
 const CARD_ROOT:Color = Color( 0.16, 0.17, 0.2, 1 )
 const CARD_PLAY:Color = Color( 0.12, 0.28, 0.42, 1 )
-const CARD_HINT:Color = Color( 0.12, 0.32, 0.26, 1 )
 const CARD_MENU:Color = Color( 0.38, 0.24, 0.12, 1 )
 const CHIP_IDLE:Color = Color( 0.2, 0.21, 0.24, 1 )
 const CHIP_PASSED:Color = Color( 0.18, 0.4, 0.62, 1 )
@@ -246,19 +245,20 @@ func _draw_title( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line( font, "Responder tree", TITLE_SIZE, TEXT, left, width, y )
 	y = _line(
 			font,
-			"WASD moves. Space jumps. H makes hint consume Space. Escape opens the menu.",
+			"WASD moves. Space jumps.",
 			SMALL_SIZE,
 			DIM,
 			left,
 			width,
 			y )
+	y = _line( font, "Escape opens the menu.", SMALL_SIZE, DIM, left, width, y )
 	return y + 6.0
 
 
 func _draw_links( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line(
 			font,
-			"Links. Parent, then children in stored order.",
+			"Links. Drawn parent, then children.",
 			SMALL_SIZE,
 			CLAIM,
 			left,
@@ -290,14 +290,12 @@ func _draw_record(
 	if mark.a > 0.0:
 		_fill( Rect2( rect.position, Vector2( 4.0, rect.size.y ) ), mark )
 
-	var title:String = label
+	var title:String = _indexed_name( record )
 	if not active:
 		title += "  inactive"
 	var slots:String = _slot_tags( record )
 	if slots != "":
 		title += "  " + slots
-	if _flag_meta( record, &"holds" ):
-		title += "  holding"
 
 	var text_y:float = rect.position.y + 4.0
 	var text_w:float = rect.size.x - 16.0
@@ -331,7 +329,15 @@ func _draw_record(
 func _draw_walks( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line(
 			font,
-			"Walks. Index 0 sees the event first. A handled viewport stops the pass.",
+			"Walks. Last child first. This list is the tree reversed.",
+			SMALL_SIZE,
+			CLAIM,
+			left,
+			width,
+			y )
+	y = _line(
+			font,
+			"That puts the last child at 0. 0 sees the event first.",
 			SMALL_SIZE,
 			CLAIM,
 			left,
@@ -366,10 +372,16 @@ func _draw_walk_row(
 			width:float,
 			y:float ) -> float:
 	var ascent:float = font.get_ascent( SMALL_SIZE )
-	_text( font, Vector2( left, y + ascent ), String( slot ), 180.0, SMALL_SIZE, DIM )
+	var slot_label:String = String( slot )
+	var slot_px:float = font.get_string_size(
+			slot_label,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			SMALL_SIZE ).x
+	_text( font, Vector2( left, y + ascent ), slot_label, width, SMALL_SIZE, DIM )
 
 	var walk:Array = _walk( tree, slot )
-	var x:float = left + 188.0
+	var x:float = left + slot_px + 12.0
 	var limit:float = left + width
 	if walk.is_empty():
 		_text( font, Vector2( x, y + ascent ), "(empty)", 120.0, SMALL_SIZE, DIM )
@@ -385,7 +397,7 @@ func _draw_walk_row(
 			continue
 
 		var id:int = record.get_instance_id()
-		var who:String = _record_name( record )
+		var who:String = "%d:%s" % [ index, _record_name( record ) ]
 		var chip_w:float = maxf(
 				52.0,
 				font.get_string_size( who, HORIZONTAL_ALIGNMENT_LEFT, -1, SMALL_SIZE ).x + 14.0 )
@@ -417,7 +429,15 @@ func _draw_walk_row(
 func _draw_names( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line(
 			font,
-			"Names. The front write stays. A later layer cannot replace it.",
+			"Actions. Each row is one action name in the merged map.",
+			SMALL_SIZE,
+			CLAIM,
+			left,
+			width,
+			y )
+	y = _line(
+			font,
+			"0 writes the name first. kept stays. lost was written later.",
 			SMALL_SIZE,
 			CLAIM,
 			left,
@@ -432,18 +452,7 @@ func _draw_names( font:Font, left:float, width:float, y:float ) -> float:
 	var effective:CustomInputMap = _effective_map()
 	for action:StringName in WATCHED:
 		y = _line( font, _name_row( action, layers, effective ), SMALL_SIZE, TEXT, left, width, y )
-
 	y = _line( font, _baseline_sentence( layers, effective ), SMALL_SIZE, DIM, left, width, y )
-	if _branch_holds( root ):
-		y = _line(
-				font,
-				"Hint has no map. It stopped the walk, and jump is still play's binding.",
-				SMALL_SIZE,
-				CLAIM,
-				left,
-				width,
-				y )
-
 	return y
 
 
@@ -465,8 +474,6 @@ func _card_color( label:String, active:bool ) -> Color:
 	var color:Color = CARD_ROOT
 	if label == "play":
 		color = CARD_PLAY
-	elif label == "hint":
-		color = CARD_HINT
 	elif label == "menu":
 		color = CARD_MENU
 	if not active:
@@ -521,6 +528,22 @@ func _effective_map() -> CustomInputMap:
 	if raw is CustomInputMap:
 		return raw
 	return null
+
+
+func _input_index( record:Object ) -> int:
+	var tree:Object = _link_tree()
+	if tree == null or record == null:
+		return -1
+	var walk:Array = _walk( tree, &"_input" )
+	var id:int = record.get_instance_id()
+	for index:int in walk.size():
+		var item:Variant = walk[index]
+		if item is not Object:
+			continue
+		var other:Object = item
+		if other != null and other.get_instance_id() == id:
+			return index
+	return -1
 
 
 func _walk( tree:Object, slot:StringName ) -> Array:
@@ -663,7 +686,7 @@ func _name_row(
 		var map:CustomInputMap = _record_map( record )
 		if map == null or not map.has_action( action ):
 			continue
-		var who:String = _record_name( record )
+		var who:String = _indexed_name( record )
 		var events:String = _events_label( map, action )
 		if kept:
 			_added = parts.append( "%s %s kept" % [ who, events ] )
@@ -730,33 +753,15 @@ func _baseline_count( layers:Array[Object], effective:CustomInputMap ) -> int:
 	return extra
 
 
-func _branch_holds( record:Object ) -> bool:
-	if _flag_meta( record, &"holds" ):
-		return true
-
-	var raw:Variant = record.get( &"children" )
-	if raw is not Array:
-		return false
-
-	var kids:Array = raw
-	for child_v:Variant in kids:
-		if child_v is not Object:
-			continue
-		var child:Object = child_v
-		if child == null:
-			continue
-		if _branch_holds( child ):
-			return true
-	return false
+func _indexed_name( record:Object ) -> String:
+	var label:String = _record_name( record )
+	var at:int = _input_index( record )
+	if at < 0:
+		return label
+	return "%d:%s" % [ at, label ]
 
 
 func _flag( record:Object, prop:StringName ) -> bool:
 	return record.get( prop ) == true
-
-
-func _flag_meta( record:Object, key:StringName ) -> bool:
-	if not record.has_meta( key ):
-		return false
-	return record.get_meta( key ) == true
 
 #endregion Read
