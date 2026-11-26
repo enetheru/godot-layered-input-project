@@ -61,7 +61,7 @@ func _process( _delta:float ) -> void:
 	if not _is_open or _panel == null:
 		return
 	var view_size:Vector2 = get_viewport().get_visible_rect().size
-	var height:float = maxf( _panel.size.y, 240.0 )
+	var height:float = maxf( _panel.size.y, 320.0 )
 	_panel.position = Vector2( view_size.x - 336.0, view_size.y * 0.5 - height * 0.5 )
 
 
@@ -124,7 +124,7 @@ func open() -> void:
 	_is_open = true
 	_layer.visible = true
 	if play != null:
-		play.set_movement_paused( true )
+		play.set_menu_paused( true )
 	_resume_button.grab_focus()
 
 
@@ -136,7 +136,7 @@ func close() -> void:
 	_is_open = false
 	_layer.visible = false
 	if play != null:
-		play.set_movement_paused( false )
+		play.set_menu_paused( false )
 
 
 ## Close, and pulse the cube so the confirm is visible in the world.
@@ -149,6 +149,10 @@ func _resume() -> void:
 func _reset() -> void:
 	if play != null:
 		play.reset_place()
+
+
+func _quit() -> void:
+	get_tree().quit()
 
 #endregion Mount
 
@@ -206,6 +210,11 @@ func _build_panel() -> void:
 	@warning_ignore("int_as_enum_without_cast")
 	var _reset_hook:Error = reset.pressed.connect( _reset )
 	box.add_child( reset )
+
+	var quit:Button = _button( "Quit" )
+	@warning_ignore("int_as_enum_without_cast")
+	var _quit_hook:Error = quit.pressed.connect( _quit )
+	box.add_child( quit )
 	_panel.reset_size()
 
 	_layer.visible = false

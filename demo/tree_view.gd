@@ -23,6 +23,7 @@ const PANEL:Color = Color( 0.05, 0.06, 0.08, 0.92 )
 const CARD_ROOT:Color = Color( 0.16, 0.17, 0.2, 1 )
 const CARD_PLAY:Color = Color( 0.12, 0.28, 0.42, 1 )
 const CARD_MENU:Color = Color( 0.38, 0.24, 0.12, 1 )
+const CARD_INVENTORY:Color = Color( 0.18, 0.32, 0.24, 1 )
 const CHIP_IDLE:Color = Color( 0.2, 0.21, 0.24, 1 )
 const CHIP_PASSED:Color = Color( 0.18, 0.4, 0.62, 1 )
 const CHIP_CONSUMED:Color = Color( 0.72, 0.34, 0.16, 1 )
@@ -34,6 +35,7 @@ const WATCHED:Array[StringName] = [
 	&"move_left",
 	&"confirm",
 	&"open_menu",
+	&"inventory",
 	&"ui_accept",
 ]
 
@@ -245,13 +247,13 @@ func _draw_title( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line( font, "Responder tree", TITLE_SIZE, TEXT, left, width, y )
 	y = _line(
 			font,
-			"WASD moves. Space jumps.",
+			"WASD moves. Space jumps. Tab opens inventory.",
 			SMALL_SIZE,
 			DIM,
 			left,
 			width,
 			y )
-	y = _line( font, "Escape opens the menu.", SMALL_SIZE, DIM, left, width, y )
+	y = _line( font, "Escape closes inventory, or opens the menu.", SMALL_SIZE, DIM, left, width, y )
 	return y + 6.0
 
 
@@ -426,6 +428,87 @@ func _draw_walk_row(
 	return y + 24.0
 
 
+## The Escape row for the status frame. The actions that still have it, front of the walk first.
+func escape_line() -> String:
+	var root:Object = _root()
+	if root == null:
+		return "Escape  (none)"
+	return _key_line( KEY_ESCAPE, _contributors( root ), _effective_map() )
+
+
+func _key_line( code:Key, layers:Array[Object], effective:CustomInputMap ) -> String:
+	var label:String = OS.get_keycode_string( code )
+	if effective == null:
+		return "%s  (none)" % label
+
+	var parts:PackedStringArray = PackedStringArray()
+	var _added:bool = false
+	for action:StringName in _actions_with_key( effective, code, layers ):
+		_added = parts.append( "%s %s" % [ _keeper_name( action, layers ), action ] )
+	if parts.is_empty():
+		return "%s  (none)" % label
+	return "%s  %s" % [ label, " · ".join( parts ) ]
+
+
+func _actions_with_key(
+			effective:CustomInputMap,
+			code:Key,
+			layers:Array[Object] ) -> Array[StringName]:
+	var found:Array[StringName] = []
+	for action:StringName in effective.get_action_names():
+		if _map_has_key( effective, action, code ):
+			found.append( action )
+	return _sort_by_keeper( found, layers )
+
+
+func _sort_by_keeper( actions:Array[StringName], layers:Array[Object] ) -> Array[StringName]:
+	var ordered:Array[StringName] = []
+	var ranks:Array[int] = []
+	for action:StringName in actions:
+		var rank:int = _keeper_index( action, layers )
+		var at:int = ordered.size()
+		for index:int in ordered.size():
+			if rank < ranks[index]:
+				at = index
+				break
+		var _placed:int = ordered.insert( at, action )
+		var _ranked:int = ranks.insert( at, rank )
+	return ordered
+
+
+func _keeper_name( action:StringName, layers:Array[Object] ) -> String:
+	for record:Object in layers:
+		var map:CustomInputMap = _record_map( record )
+		if map != null and map.has_action( action ):
+			return _indexed_name( record )
+	return "baseline"
+
+
+func _keeper_index( action:StringName, layers:Array[Object] ) -> int:
+	var index:int = 0
+	for record:Object in layers:
+		var map:CustomInputMap = _record_map( record )
+		if map != null and map.has_action( action ):
+			var at:int = _input_index( record )
+			if at >= 0:
+				return at
+			return index
+		index += 1
+	return 1000
+
+
+func _map_has_key( map:CustomInputMap, action:StringName, code:Key ) -> bool:
+	for event:InputEvent in map.get_action_events( action ):
+		if event is InputEventKey:
+			var key:InputEventKey = event as InputEventKey
+			var got:Key = key.physical_keycode
+			if got == KEY_NONE:
+				got = key.keycode
+			if got == code:
+				return true
+	return false
+
+
 func _draw_names( font:Font, left:float, width:float, y:float ) -> float:
 	y = _line(
 			font,
@@ -476,6 +559,8 @@ func _card_color( label:String, active:bool ) -> Color:
 		color = CARD_PLAY
 	elif label == "menu":
 		color = CARD_MENU
+	elif label == "inventory":
+		color = CARD_INVENTORY
 	if not active:
 		color = color.darkened( 0.45 )
 	return color

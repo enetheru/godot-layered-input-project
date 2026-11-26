@@ -20,6 +20,7 @@ const ACTION_FORWARD:StringName = &"move_forward"
 const ACTION_BACK:StringName = &"move_back"
 const ACTION_JUMP:StringName = &"jump"
 const ACTION_OPEN_MENU:StringName = &"open_menu"
+const ACTION_INVENTORY:StringName = &"inventory"
 
 const MOVE_SPEED:float = 8.0
 const JUMP_SPEED:float = 6.5
@@ -46,11 +47,16 @@ func                        ________PROPERTIES_______              ()->void:pass
 ## Emitted when the player asks for the menu. This script does not build that layer.
 signal menu_requested
 
+## Emitted when the player asks for the inventory. This script does not build that layer.
+signal inventory_requested
+
 @onready var body:MeshInstance3D = $"../Body"
 @onready var camera:Camera3D = $"../Camera3D"
 
 var _record:Responder
 var _trace:TreeViewScript
+var _menu_paused:bool = false
+var _inventory_paused:bool = false
 var _movement_paused:bool = false
 var _vertical_speed:float = 0.0
 var _start:Vector3
@@ -113,11 +119,28 @@ func set_trace( view:TreeViewScript ) -> void:
 	_trace = view
 
 
-## The menu calls this while its own responder is mounted.
-## Sampling must stop here. Marking a key handled does not release a held action,
-## so [method Input.get_vector] would keep moving the cube after the press.
-func set_movement_paused( paused:bool ) -> void:
-	_movement_paused = paused
+## The menu and the inventory each hold movement for themselves.
+## Closing the menu does not release a hold the inventory still has.
+## Marking a key handled does not release a held action, so [method Input.get_vector]
+## would keep moving the cube after the press unless sampling stops here.
+func set_menu_paused( paused:bool ) -> void:
+	_menu_paused = paused
+	_movement_paused = _menu_paused or _inventory_paused
+
+
+func set_inventory_paused( paused:bool ) -> void:
+	_inventory_paused = paused
+	_movement_paused = _menu_paused or _inventory_paused
+
+
+## Hang [param record] under play. It is in front of play, and behind a menu pushed on the root.
+func attach_layer( record:Responder ) -> void:
+	_record.add_responder( record )
+
+
+## Take [param record] off play. A menu mounted on the root is left where it is.
+func detach_layer( record:Responder ) -> void:
+	_record.remove_responder( record )
 
 
 ## Return the cube to where it woke, facing the way it woke.
@@ -142,6 +165,7 @@ func _build_map() -> CustomInputMap:
 	_bind( map, ACTION_BACK, [KEY_S, KEY_DOWN] )
 	_bind( map, ACTION_JUMP, [KEY_SPACE] )
 	_bind( map, ACTION_OPEN_MENU, [KEY_ESCAPE] )
+	_bind( map, ACTION_INVENTORY, [KEY_TAB] )
 	return map
 
 
@@ -169,6 +193,12 @@ func _on_input( event:InputEvent ) -> void:
 		consumed = true
 	elif _pressed( event, ACTION_OPEN_MENU ):
 		menu_requested.emit()
+		get_viewport().set_input_as_handled()
+		consumed = true
+	elif _pressed( event, ACTION_INVENTORY ) and not _menu_paused:
+		# The menu is in front while it is open, and it consumes keys, so this
+		# guard is the second stop. Tab does not open the inventory over the menu.
+		inventory_requested.emit()
 		get_viewport().set_input_as_handled()
 		consumed = true
 
